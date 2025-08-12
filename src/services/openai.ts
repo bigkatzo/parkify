@@ -7,8 +7,8 @@ const compressImage = async (file: File): Promise<File> => {
     const img = new Image();
     
     img.onload = () => {
-      // Calculate new dimensions to keep aspect ratio - smaller for faster processing
-      const maxDimension = 512; // Max width or height (reduced for speed)
+      // Calculate new dimensions to keep aspect ratio
+      const maxDimension = 1024; // Max width or height
       let { width, height } = img;
       
       if (width > height) {
@@ -134,7 +134,8 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
     formData.append('model', 'gpt-image-1');
     formData.append('prompt', SOUTH_PARK_PROMPT);
     formData.append('image', processedFile);
-    formData.append('size', '512x512'); // Smaller size for faster generation
+    formData.append('size', '1024x1024'); // Standard size for edits endpoint
+    formData.append('quality', 'medium'); // Medium quality for faster generation
 
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
