@@ -104,7 +104,7 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       };
     }
 
-    // Validate file type - GPT Image supports PNG, JPEG, and GIF
+    // Validate file type - Image API edits endpoint supports PNG, JPEG, and GIF
     const supportedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
     if (!supportedTypes.includes(imageFile.type)) {
       return {
@@ -163,12 +163,33 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       };
     }
 
-    // The Image API returns URLs by default
-    const imageUrl = data.data[0].url;
-    if (!imageUrl) {
+    // Check if we have either URL or base64 data
+    const imageData = data.data[0];
+    let imageUrl: string;
+    
+    if (imageData.url) {
+      // If we get a URL, use it directly
+      imageUrl = imageData.url;
+    } else if (imageData.b64_json) {
+      // If we get base64 data, convert it to a blob URL
+      try {
+        const binaryString = atob(imageData.b64_json);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const imageBlob = new Blob([bytes], { type: 'image/png' });
+        imageUrl = URL.createObjectURL(imageBlob);
+      } catch {
+        return {
+          success: false,
+          error: 'Failed to process base64 image data'
+        };
+      }
+    } else {
       return {
         success: false,
-        error: 'No image URL in response'
+        error: 'No image URL or base64 data in response'
       };
     }
 
