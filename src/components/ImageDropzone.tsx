@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { Upload, Image as ImageIcon } from 'lucide-react';
+import React, { useCallback, useState, useEffect } from 'react';
+import { Upload, Image as ImageIcon, Clipboard } from 'lucide-react';
 
 interface ImageDropzoneProps {
   onImageSelect: (file: File) => void;
@@ -8,6 +8,7 @@ interface ImageDropzoneProps {
 
 export const ImageDropzone: React.FC<ImageDropzoneProps> = ({ onImageSelect, disabled }) => {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showPasteHint, setShowPasteHint] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -42,6 +43,37 @@ export const ImageDropzone: React.FC<ImageDropzoneProps> = ({ onImageSelect, dis
     }
   }, [onImageSelect]);
 
+  const handlePaste = useCallback(async (e: ClipboardEvent) => {
+    if (disabled) return;
+
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    // Look for image items in clipboard
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          // Show brief feedback that paste worked
+          setShowPasteHint(true);
+          setTimeout(() => setShowPasteHint(false), 2000);
+          onImageSelect(file);
+        }
+        break;
+      }
+    }
+  }, [onImageSelect, disabled]);
+
+  // Add global paste event listener
+  useEffect(() => {
+    document.addEventListener('paste', handlePaste);
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [handlePaste]);
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div
@@ -69,7 +101,9 @@ export const ImageDropzone: React.FC<ImageDropzoneProps> = ({ onImageSelect, dis
         />
         
         <div className="flex flex-col items-center space-y-4">
-          {isDragOver ? (
+          {showPasteHint ? (
+            <Clipboard className="w-16 h-16 text-green-500 animate-pulse" />
+          ) : isDragOver ? (
             <Upload className="w-16 h-16 text-orange-500 animate-bounce" />
           ) : (
             <ImageIcon className="w-16 h-16 text-blue-500" />
@@ -77,12 +111,14 @@ export const ImageDropzone: React.FC<ImageDropzoneProps> = ({ onImageSelect, dis
           
           <div>
             <h3 className="text-2xl font-southpark font-bold text-gray-800 mb-2">
-              {disabled ? 'Processing...' : 'Drop your photo here!'}
+              {showPasteHint ? 'Image pasted!' : disabled ? 'Processing...' : 'Drop your photo here!'}
             </h3>
             <p className="text-gray-600">
-              {disabled 
-                ? 'Please wait while we South Park-ify your image'
-                : 'Or click to browse and select an image file'
+              {showPasteHint 
+                ? 'Successfully pasted image from clipboard!'
+                : disabled 
+                  ? 'Please wait while we South Park-ify your image'
+                  : 'Drop files, click to browse, or paste (Ctrl+V / Cmd+V) an image from clipboard'
               }
             </p>
           </div>
