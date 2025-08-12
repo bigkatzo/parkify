@@ -134,9 +134,6 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
     formData.append('model', 'gpt-image-1');
     formData.append('prompt', SOUTH_PARK_PROMPT);
     formData.append('image', processedFile);
-    formData.append('quality', 'high');
-    formData.append('size', 'auto');
-    formData.append('response_format', 'b64_json');
 
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
@@ -166,17 +163,14 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       };
     }
 
-    const imageBase64 = data.data[0].b64_json;
-    if (!imageBase64) {
+    // The Image API returns URLs by default
+    const imageUrl = data.data[0].url;
+    if (!imageUrl) {
       return {
         success: false,
-        error: 'No base64 image data in response'
+        error: 'No image URL in response'
       };
     }
-
-    // Convert base64 to blob URL for display
-    const imageBlob = new Blob([Uint8Array.from(atob(imageBase64), c => c.charCodeAt(0))], { type: 'image/png' });
-    const imageUrl = URL.createObjectURL(imageBlob);
 
     return {
       success: true,
