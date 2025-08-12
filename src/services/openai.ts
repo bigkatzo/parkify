@@ -1,4 +1,4 @@
-const OPENAI_API_URL = 'https://api.openai.com/v1/responses';
+const OPENAI_API_URL = 'https://api.openai.com/v1/images/edits';
 
 const compressImage = async (file: File): Promise<File> => {
   return new Promise((resolve) => {
@@ -46,57 +46,33 @@ const compressImage = async (file: File): Promise<File> => {
   });
 };
 
-const convertImageToBase64 = async (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      // Remove the data URL prefix to get just the base64 data
-      const base64Data = result.split(',')[1];
-      resolve(base64Data);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
 
-const SOUTH_PARK_PROMPT = `Transform this photo into a perfect, high-quality illustration in the exact style of the original South Park TV show, as if it were officially drawn by the show's animators.
 
-Character accuracy:
-• The exact same number of people as in the original photo must appear — no additional or missing characters.
-• Preserve each person's distinctive features: hairstyle, hair color, facial hair, skin tone, eye shape, glasses, clothing colors, accessories, and body type, adapted into South Park's flat color style.
-• Keep all subjects in the exact same pose, facial expression, position, and arrangement as in the original photo.
+const SOUTH_PARK_PROMPT = `Transform this image into a cartoon illustration in the distinctive South Park TV show animation style. Create original cartoon characters inspired by the composition and general scene, using South Park's signature art style:
 
-South Park style rules:
-• Large round head (40–50% of total height).
-• Big circular white eyes with small black pupils.
-• Mitten-style hands without separate fingers.
-• Small blocky body with simplified limbs.
-• Solid, flat colors with bold black outlines; no shading, gradients, or realistic textures.
+Art Style Requirements:
+• Large round heads (40–50% of character height)
+• Big circular white eyes with small black pupils
+• Simple mitten-style hands without individual fingers
+• Small blocky bodies with simplified limbs
+• Solid, flat colors with bold black outlines
+• No shading, gradients, or realistic textures
 
-Clothing and colors:
-• Match the colors of clothing and accessories exactly from the original photo.
-• Keep patterns simple but recognizable in South Park style.
+Character Design:
+• Create new cartoon characters inspired by the scene
+• Use South Park's typical color palette and character proportions
+• Maintain the general composition and arrangement from the reference
+• Apply South Park's signature clothing and accessory style
 
 Background:
-• Simplify the background into either a flat single-color background or a classic South Park setting (street, classroom, living room, snowy mountain town).
-• Match the perspective so that the group composition remains identical to the original.
+• Simplify to either a flat color background or classic South Park setting
+• Use the show's typical environmental style (snowy mountain town, simple interiors, etc.)
 
-Output quality:
-• The final image must be clean, sharp, and visually indistinguishable from actual South Park animation frames.
-• No extra objects, props, characters, or text unless explicitly stated.
-• Maintain correct proportions for all characters to fit naturally in the South Park universe.
+Output Quality:
+• Clean, sharp illustration matching official South Park animation quality
+• Maintain South Park's characteristic simplicity and bold visual style`;
 
-Please generate this South Park style illustration.`;
 
-interface APIResponseOutput {
-  type: string;
-  result?: string;
-}
-
-interface APIResponse {
-  output?: APIResponseOutput[];
-}
 
 export interface GenerateImageResponse {
   success: boolean;
@@ -145,8 +121,7 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       console.log('Image compressed', { newSize: processedFile.size });
     }
 
-    // Convert image to base64
-    const base64Image = await convertImageToBase64(processedFile);
+
 
     console.log('Sending request with:', {
       fileType: processedFile.type,
@@ -154,37 +129,21 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       fileName: processedFile.name
     });
 
+    // Create FormData for the Image API
+    const formData = new FormData();
+    formData.append('model', 'gpt-image-1');
+    formData.append('prompt', SOUTH_PARK_PROMPT);
+    formData.append('image', processedFile);
+    formData.append('quality', 'high');
+    formData.append('size', 'auto');
+    formData.append('response_format', 'b64_json');
+
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        input: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'input_text',
-                text: SOUTH_PARK_PROMPT
-              },
-              {
-                type: 'input_image',
-                image_url: `data:${processedFile.type};base64,${base64Image}`
-              }
-            ]
-          }
-        ],
-        tools: [
-          {
-            type: 'image_generation',
-            quality: 'high',
-            size: 'auto'
-          }
-        ]
-      })
+      body: formData
     });
 
     if (!response.ok) {
@@ -196,40 +155,22 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       };
     }
 
-    const data: APIResponse = await response.json();
+    const data = await response.json();
     console.log('OpenAI Response:', JSON.stringify(data, null, 2));
-    console.log('Output array length:', data.output?.length);
-    console.log('Output array contents:', JSON.stringify(data.output, null, 2));
     
-    // Log each output item individually
-    data.output?.forEach((item, index) => {
-      console.log(`Output item ${index}:`, item);
-      console.log(`Output item ${index} type:`, item.type);
-      console.log(`Output item ${index} keys:`, Object.keys(item));
-    });
-    console.log('Response output array:', data.output);
-    console.log('Output types:', data.output?.map((o: APIResponseOutput) => o.type));
-
-    // Extract image from response
-    const imageGenerationCalls = data.output?.filter((output: APIResponseOutput) => {
-      console.log('Checking output:', output.type, output);
-      return output.type === 'image_generation_call';
-    });
-    
-    console.log('Found image generation calls:', imageGenerationCalls);
-    
-    if (!imageGenerationCalls || imageGenerationCalls.length === 0) {
+    // Handle Image API response format
+    if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
       return {
         success: false,
-        error: `No image generation call found in response. Available output types: ${data.output?.map((o: APIResponseOutput) => o.type).join(', ') || 'none'}`
+        error: 'No image data returned from OpenAI Image API'
       };
     }
 
-    const imageBase64 = imageGenerationCalls[0].result;
+    const imageBase64 = data.data[0].b64_json;
     if (!imageBase64) {
       return {
         success: false,
-        error: 'No image data returned from GPT Image'
+        error: 'No base64 image data in response'
       };
     }
 
