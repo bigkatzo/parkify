@@ -42,7 +42,7 @@ export const ImageResult: React.FC<ImageResultProps> = ({
   return (
     <div className="w-full max-w-6xl mx-auto space-y-8">
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">
+        <h2 className="text-3xl font-southpark font-bold text-gray-800 mb-2">
           🎉 Your South Park Transformation is Complete!
         </h2>
         <p className="text-gray-600">
@@ -52,7 +52,7 @@ export const ImageResult: React.FC<ImageResultProps> = ({
 
       <div className="grid md:grid-cols-2 gap-8">
         <div className="space-y-4">
-          <h3 className="text-xl font-bold text-gray-800 text-center">Original</h3>
+          <h3 className="text-xl font-southpark font-bold text-gray-800 text-center">Original</h3>
           <div className="border-4 border-gray-300 rounded-2xl overflow-hidden shadow-lg">
             <img 
               src={originalImage} 
@@ -63,7 +63,7 @@ export const ImageResult: React.FC<ImageResultProps> = ({
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-xl font-bold text-gray-800 text-center">South Park Style</h3>
+          <h3 className="text-xl font-southpark font-bold text-gray-800 text-center">South Park Style</h3>
           <div className="border-4 border-orange-500 rounded-2xl overflow-hidden shadow-xl">
             <img 
               src={generatedImage} 

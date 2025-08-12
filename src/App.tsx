@@ -29,7 +29,7 @@ function App() {
         setError(result.error || 'Failed to generate image');
         setState('error');
       }
-    } catch (error) {
+    } catch {
       setError('An unexpected error occurred');
       setState('error');
     }
@@ -60,7 +60,7 @@ function App() {
         return (
           <div className="text-center p-8">
             <div className="bg-red-100 border-4 border-red-500 rounded-2xl p-8 max-w-2xl mx-auto">
-              <h3 className="text-2xl font-bold text-red-800 mb-4">
+              <h3 className="text-2xl font-southpark font-bold text-red-800 mb-4">
                 Oh No! Something Went Wrong!
               </h3>
               <p className="text-red-700 mb-6">{error}</p>
@@ -84,10 +84,10 @@ function App() {
       <header className="bg-orange-500 border-b-8 border-orange-600 shadow-xl">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center">
-            <h1 className="text-5xl font-bold text-white mb-2 drop-shadow-lg">
+            <h1 className="text-5xl font-southpark font-bold text-white mb-2 drop-shadow-lg">
               🏔️ PARKIFY 🏔️
             </h1>
-            <p className="text-xl text-orange-100 font-semibold">
+            <p className="text-xl text-orange-100 font-southpark font-semibold">
               Transform Your Photos into South Park Style!
             </p>
           </div>

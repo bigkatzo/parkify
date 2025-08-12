@@ -76,7 +76,7 @@ export const ImageDropzone: React.FC<ImageDropzoneProps> = ({ onImageSelect, dis
           )}
           
           <div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+            <h3 className="text-2xl font-southpark font-bold text-gray-800 mb-2">
               {disabled ? 'Processing...' : 'Drop your photo here!'}
             </h3>
             <p className="text-gray-600">

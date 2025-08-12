@@ -89,6 +89,15 @@ Output quality:
 
 Please generate this South Park style illustration.`;
 
+interface APIResponseOutput {
+  type: string;
+  result?: string;
+}
+
+interface APIResponse {
+  output?: APIResponseOutput[];
+}
+
 export interface GenerateImageResponse {
   success: boolean;
   imageUrl?: string;
@@ -187,7 +196,7 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       };
     }
 
-    const data = await response.json();
+    const data: APIResponse = await response.json();
     console.log('OpenAI Response:', JSON.stringify(data, null, 2));
     console.log('Output array length:', data.output?.length);
     console.log('Output array contents:', JSON.stringify(data.output, null, 2));
@@ -199,10 +208,10 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       console.log(`Output item ${index} keys:`, Object.keys(item));
     });
     console.log('Response output array:', data.output);
-    console.log('Output types:', data.output?.map((o: any) => o.type));
+    console.log('Output types:', data.output?.map((o: APIResponseOutput) => o.type));
 
     // Extract image from response
-    const imageGenerationCalls = data.output?.filter((output: any) => {
+    const imageGenerationCalls = data.output?.filter((output: APIResponseOutput) => {
       console.log('Checking output:', output.type, output);
       return output.type === 'image_generation_call';
     });
@@ -212,7 +221,7 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
     if (!imageGenerationCalls || imageGenerationCalls.length === 0) {
       return {
         success: false,
-        error: `No image generation call found in response. Available output types: ${data.output?.map((o: any) => o.type).join(', ') || 'none'}`
+        error: `No image generation call found in response. Available output types: ${data.output?.map((o: APIResponseOutput) => o.type).join(', ') || 'none'}`
       };
     }
 

@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* South Park Font */
+@font-face {
+  font-family: 'SouthPark';
+  src: url('/fonts/south park.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
