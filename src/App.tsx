@@ -3,6 +3,7 @@ import { ImageDropzone } from './components/ImageDropzone';
 import { ProcessingSpinner } from './components/ProcessingSpinner';
 import { ImageResult } from './components/ImageResult';
 import { generateSouthParkImage } from './services/openai';
+import { Youtube, Package, Pill } from 'lucide-react';
 
 type AppState = 'upload' | 'processing' | 'result' | 'error';
 
@@ -152,8 +153,74 @@ function App() {
         </div>
       </section>
 
+      {/* Sub-Footer Links */}
+      <section className="bg-gray-700 py-8 mt-8">
+        <div className="container mx-auto px-4 text-center">
+          <h3 className="text-2xl font-southpark font-bold text-white mb-6">
+            links
+          </h3>
+          <div className="flex justify-center items-center space-x-8 flex-wrap gap-4">
+            {/* X (Twitter) */}
+            <a
+              href="https://x.com/parkifyme"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-black hover:bg-gray-900 text-white p-4 rounded-full border-4 border-gray-800 transform hover:scale-110 transition-all duration-200 shadow-lg"
+              title="Follow us on X"
+            >
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-white"
+              >
+                <path
+                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                  fill="currentColor"
+                />
+              </svg>
+            </a>
+
+            {/* YouTube */}
+            <a
+              href="https://www.youtube.com/@DotFunTV"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-red-600 hover:bg-red-700 text-white p-4 rounded-full border-4 border-gray-800 transform hover:scale-110 transition-all duration-200 shadow-lg"
+              title="Subscribe to our YouTube"
+            >
+              <Youtube size={32} />
+            </a>
+
+            {/* Pump.fun */}
+            <a
+              href="https://pump.fun/coin/BxL2Z6M96m5YiJRjTAbphHjE1Ldt1Eg8Vd4vNVBdpump"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-full border-4 border-gray-800 transform hover:scale-110 transition-all duration-200 shadow-lg"
+              title="View on Pump.fun"
+            >
+              <Pill size={32} />
+            </a>
+
+            {/* Store */}
+            <a
+              href="https://store.fun/parkify"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-full border-4 border-gray-800 transform hover:scale-110 transition-all duration-200 shadow-lg"
+              title="Visit our Store"
+            >
+              <Package size={32} />
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-6 mt-12">
+      <footer className="bg-gray-800 text-white py-6 mt-0">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm">
             Not affiliated with South Park or Comedy Central. Just for fun! 
