@@ -11,6 +11,7 @@ function App() {
   const [originalImageUrl, setOriginalImageUrl] = useState<string>('');
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
   const handleImageSelect = async (file: File) => {
     setState('processing');
@@ -40,6 +41,16 @@ function App() {
     setOriginalImageUrl('');
     setGeneratedImageUrl('');
     setError('');
+  };
+
+  const handleCopyCA = async () => {
+    try {
+      await navigator.clipboard.writeText('BxL2Z6M96m5YiJRjTAbphHjE1Ldt1Eg8Vd4vNVBdpump');
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
   };
 
   const renderContent = () => {
@@ -100,6 +111,46 @@ function App() {
           {renderContent()}
         </div>
       </main>
+
+      {/* Coming Soon Section */}
+      <section className="container mx-auto px-4 py-8">
+        <div className="bg-white rounded-3xl border-8 border-gray-800 shadow-2xl p-8 md:p-12 text-center">
+          <h2 className="text-3xl font-southpark font-bold text-gray-800 mb-6">
+            coming soon 🍿👇
+          </h2>
+          
+          {/* YouTube Video */}
+          <div className="mb-8 flex justify-center">
+            <iframe 
+              width="560" 
+              height="315" 
+              src="https://www.youtube-nocookie.com/embed/Mr60m31MLu8?si=nX_XktDpXoDR32My" 
+              title="YouTube video player" 
+              frameBorder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              referrerPolicy="strict-origin-when-cross-origin" 
+              allowFullScreen
+              className="rounded-lg border-4 border-gray-800 shadow-lg max-w-full"
+              style={{ aspectRatio: '16/9' }}
+            />
+          </div>
+
+          {/* CA Address */}
+          <div className="mt-8">
+            <button
+              onClick={handleCopyCA}
+              className="bg-orange-500 hover:bg-orange-600 text-white font-mono text-sm md:text-base py-4 px-6 rounded-full border-4 border-orange-600 transform hover:scale-105 transition-all duration-200 shadow-lg break-all"
+            >
+              {copySuccess ? '✅ Copied!' : 'BxL2Z6M96m5YiJRjTAbphHjE1Ldt1Eg8Vd4vNVBdpump'}
+            </button>
+            {!copySuccess && (
+              <p className="text-gray-600 text-sm mt-2 font-southpark">
+                👆 Click to copy CA address
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-6 mt-12">
