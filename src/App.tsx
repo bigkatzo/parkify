@@ -115,8 +115,8 @@ function App() {
 
       {/* Coming Soon Section */}
       <section className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-3xl border-8 border-gray-800 shadow-2xl p-8 md:p-12 text-center">
-          <h2 className="text-3xl font-southpark font-bold text-gray-800 mb-6">
+        <div className="p-8 md:p-12 text-center">
+          <h2 className="text-3xl font-southpark font-bold text-white mb-6 drop-shadow-lg">
             coming soon 🍿👇
           </h2>
           
@@ -145,7 +145,7 @@ function App() {
               {copySuccess ? '✅ Copied!' : 'BxL2Z6M96m5YiJRjTAbphHjE1Ldt1Eg8Vd4vNVBdpump'}
             </button>
             {!copySuccess && (
-              <p className="text-gray-600 text-sm mt-2 font-southpark">
+              <p className="text-white text-sm mt-2 font-southpark drop-shadow-md">
                 👆 Click to copy CA address
               </p>
             )}
@@ -199,7 +199,7 @@ function App() {
               href="https://pump.fun/coin/BxL2Z6M96m5YiJRjTAbphHjE1Ldt1Eg8Vd4vNVBdpump"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-full border-4 border-gray-800 transform hover:scale-110 transition-all duration-200 shadow-lg"
+              className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-full border-4 border-gray-800 transform hover:scale-110 transition-all duration-200 shadow-lg"
               title="View on Pump.fun"
             >
               <Pill size={32} />
@@ -210,7 +210,7 @@ function App() {
               href="https://store.fun/parkify"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-full border-4 border-gray-800 transform hover:scale-110 transition-all duration-200 shadow-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full border-4 border-gray-800 transform hover:scale-110 transition-all duration-200 shadow-lg"
               title="Visit our Store"
             >
               <Package size={32} />
