@@ -123,10 +123,17 @@ export const ImageResult: React.FC<ImageResultProps> = ({
       </div>
 
       {/* Hidden screenshot area - only for sharing */}
-      <div ref={screenshotRef} className="bg-white p-6 space-y-6" style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '800px' }}>
-        <div className="grid grid-cols-2 gap-6">
+      <div ref={screenshotRef} className="bg-white p-6 space-y-6" style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '400px' }}>
+        {/* Top branding */}
+        <div className="text-center">
+          <p className="text-3xl font-southpark font-bold text-orange-600 mb-2">
+            #parkify
+          </p>
+        </div>
+
+        <div className="space-y-6">
           <div className="space-y-3">
-            <h3 className="text-lg font-southpark font-bold text-gray-800 text-center">Original</h3>
+            <h3 className="text-xl font-southpark font-bold text-gray-800 text-center">Original</h3>
             <div className="border-4 border-gray-300 rounded-2xl overflow-hidden shadow-lg">
               <img 
                 src={originalImage} 
@@ -137,7 +144,7 @@ export const ImageResult: React.FC<ImageResultProps> = ({
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-lg font-southpark font-bold text-gray-800 text-center">South Park Style</h3>
+            <h3 className="text-xl font-southpark font-bold text-gray-800 text-center">South Park Style</h3>
             <div className="border-4 border-orange-500 rounded-2xl overflow-hidden shadow-xl">
               <img 
                 src={generatedImage} 
@@ -148,9 +155,10 @@ export const ImageResult: React.FC<ImageResultProps> = ({
           </div>
         </div>
 
+        {/* Bottom website URL */}
         <div className="text-center">
-          <p className="text-xl font-southpark font-bold text-orange-600">
-            #parkify
+          <p className="text-lg font-southpark font-semibold text-gray-600">
+            www.parkify.me
           </p>
         </div>
       </div>
