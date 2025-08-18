@@ -15,7 +15,7 @@ export const ImageResult: React.FC<ImageResultProps> = ({
 }) => {
   const portraitRef = useRef<HTMLDivElement>(null);
   const landscapeRef = useRef<HTMLDivElement>(null);
-  const [shareFormat, setShareFormat] = useState<'portrait' | 'landscape'>('portrait');
+  const [showShareOptions, setShowShareOptions] = useState(false);
   const handleDownload = () => {
     const link = document.createElement('a');
     link.href = generatedImage;
@@ -25,8 +25,13 @@ export const ImageResult: React.FC<ImageResultProps> = ({
     document.body.removeChild(link);
   };
 
-  const handleShare = async () => {
-    const currentRef = shareFormat === 'portrait' ? portraitRef.current : landscapeRef.current;
+  const handleShare = () => {
+    setShowShareOptions(true);
+  };
+
+  const handleFormatShare = async (format: 'portrait' | 'landscape') => {
+    setShowShareOptions(false);
+    const currentRef = format === 'portrait' ? portraitRef.current : landscapeRef.current;
     if (!currentRef) return;
 
     try {
@@ -42,7 +47,7 @@ export const ImageResult: React.FC<ImageResultProps> = ({
       canvas.toBlob(async (blob) => {
         if (!blob) return;
         
-        const file = new File([blob], `parkify-transformation-${shareFormat}.png`, { type: 'image/png' });
+        const file = new File([blob], `parkify-transformation-${format}.png`, { type: 'image/png' });
         
         if (navigator.share && navigator.canShare?.({ files: [file] })) {
           try {
@@ -53,10 +58,10 @@ export const ImageResult: React.FC<ImageResultProps> = ({
             });
           } catch (error) {
             console.log('Share failed:', error);
-            fallbackShare(canvas);
+            fallbackShare(canvas, format);
           }
         } else {
-          fallbackShare(canvas);
+          fallbackShare(canvas, format);
         }
       }, 'image/png');
     } catch (error) {
@@ -79,15 +84,15 @@ export const ImageResult: React.FC<ImageResultProps> = ({
     }
   };
 
-  const fallbackShare = (canvas: HTMLCanvasElement) => {
+  const fallbackShare = (canvas: HTMLCanvasElement, format: 'portrait' | 'landscape') => {
     // Download the image as fallback
     const link = document.createElement('a');
-    link.download = `parkify-transformation-${shareFormat}.png`;
+    link.download = `parkify-transformation-${format}.png`;
     link.href = canvas.toDataURL();
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    alert(`${shareFormat === 'portrait' ? 'Mobile' : 'Desktop'} screenshot saved! Share it with #parkify`);
+    alert(`${format === 'portrait' ? 'Mobile' : 'Desktop'} screenshot saved! Share it with #parkify`);
   };
 
   return (
@@ -125,37 +130,45 @@ export const ImageResult: React.FC<ImageResultProps> = ({
         </div>
       </div>
 
-      {/* Format Selection */}
-      <div className="text-center space-y-4">
-        <h3 className="text-lg font-southpark font-bold text-gray-800">Choose Share Format:</h3>
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={() => setShareFormat('portrait')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-full border-2 transition-all ${
-              shareFormat === 'portrait'
-                ? 'bg-blue-500 text-white border-blue-500'
-                : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-            }`}
-          >
-            <Smartphone className="w-4 h-4" />
-            <span>Mobile/Stories</span>
-          </button>
-          <button
-            onClick={() => setShareFormat('landscape')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-full border-2 transition-all ${
-              shareFormat === 'landscape'
-                ? 'bg-blue-500 text-white border-blue-500'
-                : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-            }`}
-          >
-            <Monitor className="w-4 h-4" />
-            <span>Twitter/Desktop</span>
-          </button>
+      {/* Share Options Modal */}
+      {showShareOptions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowShareOptions(false)}>
+          <div className="bg-white rounded-3xl border-4 border-gray-800 p-8 max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-southpark font-bold text-gray-800 text-center mb-6">Choose Share Format</h3>
+            
+            <div className="space-y-4">
+              <button
+                onClick={() => handleFormatShare('portrait')}
+                className="w-full flex items-center space-x-4 p-4 rounded-2xl border-4 border-blue-500 bg-blue-50 hover:bg-blue-100 transition-all"
+              >
+                <Smartphone className="w-8 h-8 text-blue-600" />
+                <div className="text-left">
+                  <h4 className="font-southpark font-bold text-blue-800">Mobile / Stories</h4>
+                  <p className="text-sm text-blue-600">Perfect for Instagram Stories, TikTok</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => handleFormatShare('landscape')}
+                className="w-full flex items-center space-x-4 p-4 rounded-2xl border-4 border-green-500 bg-green-50 hover:bg-green-100 transition-all"
+              >
+                <Monitor className="w-8 h-8 text-green-600" />
+                <div className="text-left">
+                  <h4 className="font-southpark font-bold text-green-800">Twitter / Desktop</h4>
+                  <p className="text-sm text-green-600">Optimized for Twitter, Facebook</p>
+                </div>
+              </button>
+            </div>
+            
+            <button
+              onClick={() => setShowShareOptions(false)}
+              className="w-full mt-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
-        <p className="text-sm text-gray-600">
-          {shareFormat === 'portrait' ? 'Perfect for Instagram Stories, TikTok, and mobile viewing' : 'Optimized for Twitter, Facebook, and desktop platforms'}
-        </p>
-      </div>
+      )}
 
       {/* Hidden Portrait Screenshot Area */}
       <div ref={portraitRef} className="bg-white p-6 space-y-6" style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '400px' }}>
@@ -199,17 +212,17 @@ export const ImageResult: React.FC<ImageResultProps> = ({
       </div>
 
       {/* Hidden Landscape Screenshot Area */}
-      <div ref={landscapeRef} className="bg-white p-6 space-y-4" style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '800px' }}>
+      <div ref={landscapeRef} className="bg-white p-8 space-y-6" style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '800px' }}>
         {/* Top branding */}
         <div className="text-center">
-          <p className="text-2xl font-southpark font-bold text-orange-600">
+          <p className="text-4xl font-southpark font-bold text-orange-600 mb-2">
             #parkify
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <h3 className="text-lg font-southpark font-bold text-gray-800 text-center">Original</h3>
+        <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <h3 className="text-2xl font-southpark font-bold text-gray-800 text-center">Original</h3>
             <div className="border-4 border-gray-300 rounded-2xl overflow-hidden shadow-lg">
               <img 
                 src={originalImage} 
@@ -219,8 +232,8 @@ export const ImageResult: React.FC<ImageResultProps> = ({
             </div>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-lg font-southpark font-bold text-gray-800 text-center">South Park Style</h3>
+          <div className="space-y-4">
+            <h3 className="text-2xl font-southpark font-bold text-gray-800 text-center">South Park Style</h3>
             <div className="border-4 border-orange-500 rounded-2xl overflow-hidden shadow-xl">
               <img 
                 src={generatedImage} 
@@ -233,7 +246,7 @@ export const ImageResult: React.FC<ImageResultProps> = ({
 
         {/* Bottom website URL */}
         <div className="text-center">
-          <p className="text-lg font-southpark font-semibold text-gray-600">
+          <p className="text-2xl font-southpark font-semibold text-gray-600">
             www.parkify.me
           </p>
         </div>
