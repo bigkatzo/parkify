@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Download, Share2, RotateCcw } from 'lucide-react';
+import html2canvas from 'html2canvas';
 
 interface ImageResultProps {
   originalImage: string;
@@ -12,6 +13,7 @@ export const ImageResult: React.FC<ImageResultProps> = ({
   generatedImage, 
   onReset 
 }) => {
+  const screenshotRef = useRef<HTMLDivElement>(null);
   const handleDownload = () => {
     const link = document.createElement('a');
     link.href = generatedImage;
@@ -22,55 +24,109 @@ export const ImageResult: React.FC<ImageResultProps> = ({
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'My South Park Style Image from Parkify!',
-          text: 'Check out my South Park transformation!',
-          url: window.location.href
-        });
-      } catch (error) {
-        console.log('Share failed:', error);
+    if (!screenshotRef.current) return;
+
+    try {
+      // Capture the screenshot of the comparison section
+      const canvas = await html2canvas(screenshotRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2, // Higher quality
+        useCORS: true,
+        allowTaint: true
+      });
+      
+      // Convert to blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        
+        const file = new File([blob], 'parkify-transformation.png', { type: 'image/png' });
+        
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          try {
+            await navigator.share({
+              title: 'My South Park Style Image from Parkify!',
+              text: 'Check out my South Park transformation! #parkify',
+              files: [file]
+            });
+          } catch (error) {
+            console.log('Share failed:', error);
+            fallbackShare(canvas);
+          }
+        } else {
+          fallbackShare(canvas);
+        }
+      }, 'image/png');
+    } catch (error) {
+      console.error('Screenshot failed:', error);
+      // Fallback to original share behavior
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'My South Park Style Image from Parkify!',
+            text: 'Check out my South Park transformation! #parkify',
+            url: window.location.href
+          });
+        } catch (shareError) {
+          console.log('Share failed:', shareError);
+        }
+      } else {
+        navigator.clipboard.writeText(window.location.href + ' #parkify');
+        alert('Link copied to clipboard!');
       }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
     }
+  };
+
+  const fallbackShare = (canvas: HTMLCanvasElement) => {
+    // Download the image as fallback
+    const link = document.createElement('a');
+    link.download = 'parkify-transformation.png';
+    link.href = canvas.toDataURL();
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    alert('Screenshot saved! Share it with #parkify');
   };
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-8">
-      <div className="text-center">
-        <h2 className="text-3xl font-southpark font-bold text-gray-800 mb-2">
-          🎉 Your South Park Transformation is Complete!
-        </h2>
-        <p className="text-gray-600">
-          Oh my God! They South Park-ified your photo!
-        </p>
-      </div>
+      <div ref={screenshotRef} className="bg-white p-8 rounded-3xl border-4 border-gray-800 space-y-6">
+        <div className="text-center">
+          <h2 className="text-3xl font-southpark font-bold text-gray-800 mb-2">
+            🎉 Your South Park Transformation is Complete!
+          </h2>
+          <p className="text-gray-600">
+            Oh my God! They South Park-ified your photo!
+          </p>
+        </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <h3 className="text-xl font-southpark font-bold text-gray-800 text-center">Original</h3>
-          <div className="border-4 border-gray-300 rounded-2xl overflow-hidden shadow-lg">
-            <img 
-              src={originalImage} 
-              alt="Original" 
-              className="w-full h-auto object-cover"
-            />
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <h3 className="text-xl font-southpark font-bold text-gray-800 text-center">Original</h3>
+            <div className="border-4 border-gray-300 rounded-2xl overflow-hidden shadow-lg">
+              <img 
+                src={originalImage} 
+                alt="Original" 
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-xl font-southpark font-bold text-gray-800 text-center">South Park Style</h3>
+            <div className="border-4 border-orange-500 rounded-2xl overflow-hidden shadow-xl">
+              <img 
+                src={generatedImage} 
+                alt="South Park Style" 
+                className="w-full h-auto object-cover"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <h3 className="text-xl font-southpark font-bold text-gray-800 text-center">South Park Style</h3>
-          <div className="border-4 border-orange-500 rounded-2xl overflow-hidden shadow-xl">
-            <img 
-              src={generatedImage} 
-              alt="South Park Style" 
-              className="w-full h-auto object-cover"
-            />
-          </div>
+        <div className="text-center">
+          <p className="text-2xl font-southpark font-bold text-orange-600">
+            #parkify
+          </p>
         </div>
       </div>
 
