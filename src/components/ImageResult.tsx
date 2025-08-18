@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { Download, Share2, RotateCcw } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Download, Share2, RotateCcw, Smartphone, Monitor } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
 interface ImageResultProps {
@@ -13,7 +13,9 @@ export const ImageResult: React.FC<ImageResultProps> = ({
   generatedImage, 
   onReset 
 }) => {
-  const screenshotRef = useRef<HTMLDivElement>(null);
+  const portraitRef = useRef<HTMLDivElement>(null);
+  const landscapeRef = useRef<HTMLDivElement>(null);
+  const [shareFormat, setShareFormat] = useState<'portrait' | 'landscape'>('portrait');
   const handleDownload = () => {
     const link = document.createElement('a');
     link.href = generatedImage;
@@ -24,11 +26,12 @@ export const ImageResult: React.FC<ImageResultProps> = ({
   };
 
   const handleShare = async () => {
-    if (!screenshotRef.current) return;
+    const currentRef = shareFormat === 'portrait' ? portraitRef.current : landscapeRef.current;
+    if (!currentRef) return;
 
     try {
       // Capture the screenshot of the comparison section
-      const canvas = await html2canvas(screenshotRef.current, {
+      const canvas = await html2canvas(currentRef, {
         backgroundColor: '#ffffff',
         scale: 2, // Higher quality
         useCORS: true,
@@ -39,7 +42,7 @@ export const ImageResult: React.FC<ImageResultProps> = ({
       canvas.toBlob(async (blob) => {
         if (!blob) return;
         
-        const file = new File([blob], 'parkify-transformation.png', { type: 'image/png' });
+        const file = new File([blob], `parkify-transformation-${shareFormat}.png`, { type: 'image/png' });
         
         if (navigator.share && navigator.canShare?.({ files: [file] })) {
           try {
@@ -79,12 +82,12 @@ export const ImageResult: React.FC<ImageResultProps> = ({
   const fallbackShare = (canvas: HTMLCanvasElement) => {
     // Download the image as fallback
     const link = document.createElement('a');
-    link.download = 'parkify-transformation.png';
+    link.download = `parkify-transformation-${shareFormat}.png`;
     link.href = canvas.toDataURL();
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    alert('Screenshot saved! Share it with #parkify');
+    alert(`${shareFormat === 'portrait' ? 'Mobile' : 'Desktop'} screenshot saved! Share it with #parkify`);
   };
 
   return (
@@ -122,8 +125,40 @@ export const ImageResult: React.FC<ImageResultProps> = ({
         </div>
       </div>
 
-      {/* Hidden screenshot area - only for sharing */}
-      <div ref={screenshotRef} className="bg-white p-6 space-y-6" style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '400px' }}>
+      {/* Format Selection */}
+      <div className="text-center space-y-4">
+        <h3 className="text-lg font-southpark font-bold text-gray-800">Choose Share Format:</h3>
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => setShareFormat('portrait')}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-full border-2 transition-all ${
+              shareFormat === 'portrait'
+                ? 'bg-blue-500 text-white border-blue-500'
+                : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+            }`}
+          >
+            <Smartphone className="w-4 h-4" />
+            <span>Mobile/Stories</span>
+          </button>
+          <button
+            onClick={() => setShareFormat('landscape')}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-full border-2 transition-all ${
+              shareFormat === 'landscape'
+                ? 'bg-blue-500 text-white border-blue-500'
+                : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+            }`}
+          >
+            <Monitor className="w-4 h-4" />
+            <span>Twitter/Desktop</span>
+          </button>
+        </div>
+        <p className="text-sm text-gray-600">
+          {shareFormat === 'portrait' ? 'Perfect for Instagram Stories, TikTok, and mobile viewing' : 'Optimized for Twitter, Facebook, and desktop platforms'}
+        </p>
+      </div>
+
+      {/* Hidden Portrait Screenshot Area */}
+      <div ref={portraitRef} className="bg-white p-6 space-y-6" style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '400px' }}>
         {/* Top branding */}
         <div className="text-center">
           <p className="text-3xl font-southpark font-bold text-orange-600 mb-2">
@@ -145,6 +180,47 @@ export const ImageResult: React.FC<ImageResultProps> = ({
 
           <div className="space-y-3">
             <h3 className="text-xl font-southpark font-bold text-gray-800 text-center">South Park Style</h3>
+            <div className="border-4 border-orange-500 rounded-2xl overflow-hidden shadow-xl">
+              <img 
+                src={generatedImage} 
+                alt="South Park Style" 
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom website URL */}
+        <div className="text-center">
+          <p className="text-lg font-southpark font-semibold text-gray-600">
+            www.parkify.me
+          </p>
+        </div>
+      </div>
+
+      {/* Hidden Landscape Screenshot Area */}
+      <div ref={landscapeRef} className="bg-white p-6 space-y-4" style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '800px' }}>
+        {/* Top branding */}
+        <div className="text-center">
+          <p className="text-2xl font-southpark font-bold text-orange-600">
+            #parkify
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <h3 className="text-lg font-southpark font-bold text-gray-800 text-center">Original</h3>
+            <div className="border-4 border-gray-300 rounded-2xl overflow-hidden shadow-lg">
+              <img 
+                src={originalImage} 
+                alt="Original" 
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-lg font-southpark font-bold text-gray-800 text-center">South Park Style</h3>
             <div className="border-4 border-orange-500 rounded-2xl overflow-hidden shadow-xl">
               <img 
                 src={generatedImage} 
