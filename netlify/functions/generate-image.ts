@@ -35,11 +35,13 @@ const handler: Handler = async (event) => {
   console.log('Function started - method:', event.httpMethod);
   console.log('Function invocation time:', new Date().toISOString());
   
-  // Add CORS headers
+  // Add CORS headers with connection stability improvements
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+    'Access-Control-Allow-Headers': 'Content-Type, Connection, Cache-Control',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Connection': 'keep-alive',
+    'Cache-Control': 'no-cache'
   };
 
   // Handle preflight requests

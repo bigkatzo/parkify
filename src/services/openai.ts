@@ -110,16 +110,50 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       console.error('Function connectivity test failed:', testError);
     }
 
-    // Call our secure serverless function
-    const response = await fetch('/.netlify/functions/generate-image', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        image: base64Image
-      })
-    });
+    // Call our secure serverless function with retry mechanism for HTTP/2 issues
+    let response;
+    let retryCount = 0;
+    const maxRetries = 2;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        console.log(`Attempt ${retryCount + 1} to call function...`);
+        response = await fetch('/.netlify/functions/generate-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'no-cache'
+          },
+          body: JSON.stringify({
+            image: base64Image
+          }),
+          // Add these options for better connection stability
+          keepalive: true
+        });
+        
+        // If we get here, the request succeeded
+        break;
+        
+      } catch (fetchError) {
+        console.error(`Attempt ${retryCount + 1} failed:`, fetchError);
+        retryCount++;
+        
+        if (retryCount > maxRetries) {
+          throw fetchError;
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    if (!response) {
+      return {
+        success: false,
+        error: 'Failed to connect to server after multiple attempts'
+      };
+    }
 
     if (!response.ok) {
       let errorMessage = 'Failed to generate image';
