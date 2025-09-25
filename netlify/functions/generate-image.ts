@@ -132,14 +132,38 @@ const handler: Handler = async (event) => {
 
     console.log('Sending request to OpenAI');
 
-    const response = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      // @ts-ignore - node-fetch types issue with FormData
-      body: formData
-    });
+    // Add timeout to the OpenAI API call to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minutes timeout
+
+    let response;
+    try {
+      response = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        // @ts-ignore - node-fetch types issue with FormData
+        body: formData,
+        signal: controller.signal
+      });
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.error('OpenAI API request timed out');
+        return {
+          statusCode: 408,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Request timed out. The image may be too large or complex. Please try with a smaller or simpler image.'
+          })
+        };
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const errorData = await response.json();

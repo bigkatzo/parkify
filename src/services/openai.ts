@@ -100,19 +100,31 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
     while (retryCount <= maxRetries) {
       try {
         console.log(`Attempt ${retryCount + 1} to call function...`);
-        response = await fetch('/.netlify/functions/generate-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Connection': 'keep-alive',
-            'Cache-Control': 'no-cache'
-          },
-          body: JSON.stringify({
-            image: base64Image
-          }),
-          // Add these options for better connection stability
-          keepalive: true
-        });
+        
+        // Add timeout to prevent hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout
+        
+        try {
+          response = await fetch('/.netlify/functions/generate-image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Connection': 'keep-alive',
+              'Cache-Control': 'no-cache'
+            },
+            body: JSON.stringify({
+              image: base64Image
+            }),
+            signal: controller.signal,
+            // Add these options for better connection stability
+            keepalive: true
+          });
+          clearTimeout(timeoutId);
+        } catch (error) {
+          clearTimeout(timeoutId);
+          throw error;
+        }
         
         // If we get here, the request succeeded
         break;
@@ -125,8 +137,10 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
           throw fetchError;
         }
         
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Progressive backoff: wait longer for each retry
+        const waitTime = Math.min(1000 * Math.pow(2, retryCount), 5000);
+        console.log(`Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
 
@@ -144,10 +158,26 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
         console.error('API Error:', errorData);
         errorMessage = errorData.error || errorMessage;
       } catch (e) {
-        // If response is not JSON (e.g., 504 timeout)
-        errorMessage = response.status === 504 
-          ? 'Request timed out. Please try again with a smaller image.'
-          : `Server error (${response.status}). Please try again.`;
+        // Handle different HTTP status codes with specific messages
+        switch (response.status) {
+          case 504:
+            errorMessage = 'Request timed out. The image may be too large or complex. Please try with a smaller or simpler image.';
+            break;
+          case 408:
+            errorMessage = 'Request timed out. Please try again with a smaller image.';
+            break;
+          case 413:
+            errorMessage = 'Image file is too large. Please use a smaller image.';
+            break;
+          case 429:
+            errorMessage = 'Too many requests. Please wait a moment and try again.';
+            break;
+          case 500:
+            errorMessage = 'Server error. Please try again in a few moments.';
+            break;
+          default:
+            errorMessage = `Server error (${response.status}). Please try again.`;
+        }
       }
       return {
         success: false,
