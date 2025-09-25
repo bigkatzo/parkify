@@ -111,23 +111,16 @@ const handler: Handler = async (event) => {
 
     console.log('Sending request to OpenAI');
 
-    // Set a longer timeout for the OpenAI request
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 50000); // 50 second timeout
+    const response = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      // @ts-ignore - node-fetch types issue with FormData
+      body: formData
+    });
 
-    try {
-      const response = await fetch(OPENAI_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        // @ts-ignore - node-fetch types issue with FormData
-        body: formData
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
+    if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenAI API Error:', errorData);
       return {
