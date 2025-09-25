@@ -5,8 +5,8 @@ const compressImage = async (file: File): Promise<File> => {
     const img = new Image();
     
     img.onload = () => {
-      // Calculate new dimensions to keep aspect ratio - reduced for network limits
-      const maxDimension = 512; // Max width or height - smaller for Netlify function limits
+      // Calculate new dimensions to keep aspect ratio
+      const maxDimension = 1024; // Max width or height
       let { width, height } = img;
       
       if (width > height) {
@@ -37,7 +37,7 @@ const compressImage = async (file: File): Promise<File> => {
         } else {
           resolve(file);
         }
-      }, 'image/jpeg', 0.5);
+      }, 'image/jpeg', 0.8);
     };
     
     img.src = URL.createObjectURL(file);
@@ -69,21 +69,21 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       };
     }
 
-    // ALWAYS compress to reduce payload size for Netlify function limits
-    console.log('Compressing image for network transmission...', { originalSize: imageFile.size });
-    let processedFile = await compressImage(imageFile);
-    console.log('Image compressed', { newSize: processedFile.size });
+    // Compress if file is too large (50MB limit for GPT Image) - match original logic exactly
+    let processedFile = imageFile;
+    if (imageFile.size > 50 * 1024 * 1024) {
+      console.log('Image too large, compressing...', { originalSize: imageFile.size });
+      processedFile = await compressImage(imageFile);
+      console.log('Image compressed', { newSize: processedFile.size });
+    } else if (imageFile.size > 10 * 1024 * 1024) {
+      // For images between 10MB-50MB, also compress to reduce processing time
+      console.log('Large image detected, compressing for faster processing...', { originalSize: imageFile.size });
+      processedFile = await compressImage(imageFile);
+      console.log('Image compressed', { newSize: processedFile.size });
+    }
 
     // Convert to base64 for backend transmission
     const base64Image = await fileToBase64(processedFile);
-
-    console.log('Payload size check:', {
-      originalFileSize: imageFile.size,
-      compressedFileSize: processedFile.size,
-      base64Length: base64Image.length,
-      payloadSizeKB: Math.round(base64Image.length / 1024),
-      payloadSizeMB: Math.round(base64Image.length / 1024 / 1024 * 100) / 100
-    });
 
     console.log('Sending request with:', {
       fileType: imageFile.type,
@@ -91,24 +91,6 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       fileName: imageFile.name
     });
 
-    // Test if function is reachable first
-    console.log('Testing function connectivity...');
-    try {
-      const testResponse = await fetch('/.netlify/functions/generate-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ test: true })
-      });
-      
-      if (testResponse.ok) {
-        const testData = await testResponse.json();
-        console.log('Function test successful:', testData);
-      } else {
-        console.warn('Function test failed:', testResponse.status);
-      }
-    } catch (testError) {
-      console.error('Function connectivity test failed:', testError);
-    }
 
     // Call our secure serverless function with retry mechanism for HTTP/2 issues
     let response;

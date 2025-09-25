@@ -32,21 +32,15 @@ Output Quality:
 • Maintain South Park's characteristic simplicity and bold visual style`;
 
 const handler: Handler = async (event) => {
-  console.log('Function started - method:', event.httpMethod);
-  console.log('Function invocation time:', new Date().toISOString());
-  
-  // Add CORS headers with connection stability improvements
+  // Add CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Connection, Cache-Control',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Connection': 'keep-alive',
-    'Cache-Control': 'no-cache'
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
   };
 
   // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
-    console.log('Handling OPTIONS preflight request');
     return {
       statusCode: 200,
       headers,
@@ -56,7 +50,6 @@ const handler: Handler = async (event) => {
 
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
-    console.log('Invalid method:', event.httpMethod);
     return {
       statusCode: 405,
       headers,
@@ -64,19 +57,8 @@ const handler: Handler = async (event) => {
     };
   }
 
-  // Send immediate response to test if function is being called
-  if (event.body && event.body.includes('"test":true')) {
-    console.log('Test request received');
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ success: true, message: 'Function is working' })
-    };
-  }
 
   try {
-    console.log('Starting image processing...');
-    
     const apiKey = process.env.OPENAI_API_KEY;
     
     console.log('Environment check:', {
@@ -86,7 +68,6 @@ const handler: Handler = async (event) => {
     });
     
     if (!apiKey) {
-      console.log('No API key found');
       return {
         statusCode: 500,
         headers,
@@ -98,7 +79,6 @@ const handler: Handler = async (event) => {
     }
 
     if (apiKey.includes('your_ope') || apiKey.includes('************')) {
-      console.log('API key is placeholder');
       return {
         statusCode: 500,
         headers,
@@ -110,7 +90,6 @@ const handler: Handler = async (event) => {
     }
 
     if (!event.body) {
-      console.log('No body provided');
       return {
         statusCode: 400,
         headers,
@@ -121,11 +100,10 @@ const handler: Handler = async (event) => {
       };
     }
 
-    console.log('Parsing request body...');
     // Parse the request body
     const { image } = JSON.parse(event.body);
     
-    console.log('Processing request with image data:', {
+    console.log('Processing request with:', {
       dataLength: image.length,
       base64Length: image.split(',')[1].length
     });
@@ -152,8 +130,7 @@ const handler: Handler = async (event) => {
     formData.append('size', '1024x1024'); // Standard size for edits endpoint
     formData.append('quality', 'medium'); // Medium quality for faster generation
 
-    console.log('Sending request to OpenAI...');
-    const startTime = Date.now();
+    console.log('Sending request to OpenAI');
 
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
@@ -164,11 +141,7 @@ const handler: Handler = async (event) => {
       body: formData
     });
 
-    const endTime = Date.now();
-    console.log(`OpenAI response received in ${endTime - startTime}ms, status:`, response.status);
-
     if (!response.ok) {
-      console.log('OpenAI API error response');
       const errorData = await response.json();
       console.error('OpenAI API Error:', errorData);
       return {
@@ -181,9 +154,8 @@ const handler: Handler = async (event) => {
       };
     }
 
-    console.log('Parsing OpenAI response...');
     const data = await response.json();
-    console.log('OpenAI Response received successfully');
+    console.log('OpenAI Response:', JSON.stringify(data, null, 2));
     
     if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
       return {
@@ -215,7 +187,6 @@ const handler: Handler = async (event) => {
       };
     }
 
-    console.log('Returning success response');
     return {
       statusCode: 200,
       headers,
