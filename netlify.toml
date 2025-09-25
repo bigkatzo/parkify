@@ -6,11 +6,13 @@
   NODE_VERSION = "18"
 
 [functions]
-  # Increase the function timeout to 2 minutes for image generation
   node_bundler = "esbuild"
   external_node_modules = ["form-data"]
   included_files = []
-  timeout = "120"
+
+[functions.generate-image]
+  # Increase the function timeout to 2 minutes for image generation
+  timeout = 120
 
 [[redirects]]
   from = "/*"
