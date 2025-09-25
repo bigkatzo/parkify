@@ -5,8 +5,8 @@ const compressImage = async (file: File): Promise<File> => {
     const img = new Image();
     
     img.onload = () => {
-      // Calculate new dimensions to keep aspect ratio
-      const maxDimension = 1024; // Max width or height
+      // Calculate new dimensions to keep aspect ratio - reduced for network limits
+      const maxDimension = 512; // Max width or height - smaller for Netlify function limits
       let { width, height } = img;
       
       if (width > height) {
@@ -37,7 +37,7 @@ const compressImage = async (file: File): Promise<File> => {
         } else {
           resolve(file);
         }
-      }, 'image/jpeg', 0.8);
+      }, 'image/jpeg', 0.5);
     };
     
     img.src = URL.createObjectURL(file);
@@ -69,21 +69,21 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       };
     }
 
-    // Compress if file is too large (50MB limit for GPT Image) - match original logic exactly
-    let processedFile = imageFile;
-    if (imageFile.size > 50 * 1024 * 1024) {
-      console.log('Image too large, compressing...', { originalSize: imageFile.size });
-      processedFile = await compressImage(imageFile);
-      console.log('Image compressed', { newSize: processedFile.size });
-    } else if (imageFile.size > 10 * 1024 * 1024) {
-      // For images between 10MB-50MB, also compress to reduce processing time
-      console.log('Large image detected, compressing for faster processing...', { originalSize: imageFile.size });
-      processedFile = await compressImage(imageFile);
-      console.log('Image compressed', { newSize: processedFile.size });
-    }
+    // ALWAYS compress to reduce payload size for Netlify function limits
+    console.log('Compressing image for network transmission...', { originalSize: imageFile.size });
+    let processedFile = await compressImage(imageFile);
+    console.log('Image compressed', { newSize: processedFile.size });
 
     // Convert to base64 for backend transmission
     const base64Image = await fileToBase64(processedFile);
+
+    console.log('Payload size check:', {
+      originalFileSize: imageFile.size,
+      compressedFileSize: processedFile.size,
+      base64Length: base64Image.length,
+      payloadSizeKB: Math.round(base64Image.length / 1024),
+      payloadSizeMB: Math.round(base64Image.length / 1024 / 1024 * 100) / 100
+    });
 
     console.log('Sending request with:', {
       fileType: imageFile.type,
