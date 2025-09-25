@@ -91,6 +91,25 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       fileName: imageFile.name
     });
 
+    // Test if function is reachable first
+    console.log('Testing function connectivity...');
+    try {
+      const testResponse = await fetch('/.netlify/functions/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ test: true })
+      });
+      
+      if (testResponse.ok) {
+        const testData = await testResponse.json();
+        console.log('Function test successful:', testData);
+      } else {
+        console.warn('Function test failed:', testResponse.status);
+      }
+    } catch (testError) {
+      console.error('Function connectivity test failed:', testError);
+    }
+
     // Call our secure serverless function
     const response = await fetch('/.netlify/functions/generate-image', {
       method: 'POST',

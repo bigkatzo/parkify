@@ -11,7 +11,6 @@
 
 [functions."generate-image"]
   memory = 3008
-  timeout = 900
 
 [[redirects]]
   from = "/*"

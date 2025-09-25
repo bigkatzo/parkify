@@ -33,6 +33,7 @@ Output Quality:
 
 const handler: Handler = async (event) => {
   console.log('Function started - method:', event.httpMethod);
+  console.log('Function invocation time:', new Date().toISOString());
   
   // Add CORS headers
   const headers = {
@@ -43,6 +44,7 @@ const handler: Handler = async (event) => {
 
   // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
+    console.log('Handling OPTIONS preflight request');
     return {
       statusCode: 200,
       headers,
@@ -52,10 +54,21 @@ const handler: Handler = async (event) => {
 
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
+    console.log('Invalid method:', event.httpMethod);
     return {
       statusCode: 405,
       headers,
       body: JSON.stringify({ error: 'Method not allowed' }),
+    };
+  }
+
+  // Send immediate response to test if function is being called
+  if (event.body && event.body.includes('"test":true')) {
+    console.log('Test request received');
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ success: true, message: 'Function is working' })
     };
   }
 
@@ -138,6 +151,7 @@ const handler: Handler = async (event) => {
     formData.append('quality', 'medium'); // Medium quality for faster generation
 
     console.log('Sending request to OpenAI...');
+    const startTime = Date.now();
 
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
@@ -148,7 +162,8 @@ const handler: Handler = async (event) => {
       body: formData
     });
 
-    console.log('OpenAI response received, status:', response.status);
+    const endTime = Date.now();
+    console.log(`OpenAI response received in ${endTime - startTime}ms, status:`, response.status);
 
     if (!response.ok) {
       console.log('OpenAI API error response');
