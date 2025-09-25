@@ -44,10 +44,34 @@ const compressImage = async (file: File): Promise<File> => {
   });
 };
 
-const fileToBase64 = async (file: File): Promise<string> => {
-  return new Promise((resolve) => {
+// Convert any image format to PNG (required by OpenAI)
+const convertImageToPNG = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      // Set canvas size to image size
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      // Draw image to canvas
+      ctx?.drawImage(img, 0, 0);
+      
+      // Convert to PNG base64
+      const pngBase64 = canvas.toDataURL('image/png');
+      resolve(pngBase64);
+    };
+    
+    img.onerror = reject;
+    
+    // Load the image
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
     reader.readAsDataURL(file);
   });
 };
@@ -82,13 +106,14 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       console.log('Image compressed', { newSize: processedFile.size });
     }
 
-    // Convert to base64 for backend transmission
-    const base64Image = await fileToBase64(processedFile);
+    // Convert to PNG format (required by OpenAI) and then to base64
+    const base64Image = await convertImageToPNG(processedFile);
 
     console.log('Sending request with:', {
-      fileType: imageFile.type,
+      originalType: imageFile.type,
       fileSize: imageFile.size,
-      fileName: imageFile.name
+      fileName: imageFile.name,
+      convertedFormat: 'PNG'
     });
 
 

@@ -113,7 +113,7 @@ const handler: Handler = async (event) => {
     formData.append('model', 'dall-e-2'); // Use DALL-E 2 for edits
     formData.append('prompt', SOUTH_PARK_PROMPT);
     
-    // Handle base64 image data with optimization
+    // Handle base64 image data with format conversion
     const base64Data = image.split(',')[1];
     let imageBuffer = Buffer.from(base64Data, 'base64');
     
@@ -124,12 +124,13 @@ const handler: Handler = async (event) => {
     }
     
     const mimeMatch = image.match(/^data:([^;]+);base64,/);
-    const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
-    const fileExtension = mimeType.split('/')[1] || 'png';
+    const originalMimeType = mimeMatch ? mimeMatch[1] : 'image/png';
     
+    // OpenAI only accepts PNG files for image edits, so we need to ensure PNG format
+    // For now, we'll send it as PNG and let OpenAI handle the conversion
     formData.append('image', imageBuffer, {
-      filename: `image.${fileExtension}`,
-      contentType: mimeType
+      filename: 'image.png',
+      contentType: 'image/png'
     });
     
     // Use smaller size for faster generation
