@@ -32,15 +32,36 @@ Output Quality:
 • Maintain South Park's characteristic simplicity and bold visual style`;
 
 const handler: Handler = async (event) => {
+  console.log('Function started - method:', event.httpMethod);
+  
+  // Add CORS headers
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    };
+  }
+
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers,
       body: JSON.stringify({ error: 'Method not allowed' }),
     };
   }
 
   try {
+    console.log('Starting image processing...');
+    
     const apiKey = process.env.OPENAI_API_KEY;
     
     console.log('Environment check:', {
@@ -50,8 +71,10 @@ const handler: Handler = async (event) => {
     });
     
     if (!apiKey) {
+      console.log('No API key found');
       return {
         statusCode: 500,
+        headers,
         body: JSON.stringify({
           success: false,
           error: 'OpenAI API key not configured. Please check your Netlify environment variables.'
@@ -60,8 +83,10 @@ const handler: Handler = async (event) => {
     }
 
     if (apiKey.includes('your_ope') || apiKey.includes('************')) {
+      console.log('API key is placeholder');
       return {
         statusCode: 500,
+        headers,
         body: JSON.stringify({
           success: false,
           error: 'OpenAI API key is still using placeholder value. Please check your Netlify environment variables.'
@@ -70,8 +95,10 @@ const handler: Handler = async (event) => {
     }
 
     if (!event.body) {
+      console.log('No body provided');
       return {
         statusCode: 400,
+        headers,
         body: JSON.stringify({
           success: false,
           error: 'No image data provided'
@@ -79,6 +106,7 @@ const handler: Handler = async (event) => {
       };
     }
 
+    console.log('Parsing request body...');
     // Parse the request body
     const { image } = JSON.parse(event.body);
     
@@ -109,7 +137,7 @@ const handler: Handler = async (event) => {
     formData.append('size', '1024x1024'); // Standard size for edits endpoint
     formData.append('quality', 'medium'); // Medium quality for faster generation
 
-    console.log('Sending request to OpenAI');
+    console.log('Sending request to OpenAI...');
 
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
@@ -120,11 +148,15 @@ const handler: Handler = async (event) => {
       body: formData
     });
 
+    console.log('OpenAI response received, status:', response.status);
+
     if (!response.ok) {
+      console.log('OpenAI API error response');
       const errorData = await response.json();
       console.error('OpenAI API Error:', errorData);
       return {
         statusCode: response.status,
+        headers,
         body: JSON.stringify({
           success: false,
           error: `OpenAI Error: ${errorData.error?.message || 'Unknown error'}`
@@ -132,8 +164,9 @@ const handler: Handler = async (event) => {
       };
     }
 
+    console.log('Parsing OpenAI response...');
     const data = await response.json();
-    console.log('OpenAI Response:', JSON.stringify(data, null, 2));
+    console.log('OpenAI Response received successfully');
     
     if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
       return {
@@ -165,8 +198,10 @@ const handler: Handler = async (event) => {
       };
     }
 
+    console.log('Returning success response');
     return {
       statusCode: 200,
+      headers,
       body: JSON.stringify({
         success: true,
         imageUrl: imageUrl
@@ -177,6 +212,7 @@ const handler: Handler = async (event) => {
     console.error('Request failed:', error);
     return {
       statusCode: 500,
+      headers,
       body: JSON.stringify({
         success: false,
         error: `Failed to generate image: ${error instanceof Error ? error.message : 'Unknown error'}`
