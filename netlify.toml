@@ -7,13 +7,10 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["form-data"]
-  included_files = []
 
 [functions.generate-image]
   included_files = []
-  external_node_modules = ["form-data"]
-  timeout = "30m"
+  external_node_modules = ["form-data", "node-fetch"]
 
 [[redirects]]
   from = "/*"

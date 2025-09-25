@@ -97,11 +97,10 @@ const handler: Handler = async (event) => {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json',
       },
       // @ts-ignore - node-fetch types issue with FormData
-      body: formData,
-      // Adding a longer timeout for image generation
-      timeout: 120000 // 2 minutes timeout
+      body: formData
     });
 
     if (!response.ok) {
