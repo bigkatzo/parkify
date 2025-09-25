@@ -230,16 +230,6 @@ function App() {
         </div>
       </footer>
 
-      {/* API Key Notice */}
-      {(!import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY.includes('your_ope')) && (
-        <div className="fixed bottom-4 right-4 bg-yellow-500 text-yellow-900 p-4 rounded-lg shadow-lg max-w-sm">
-          <p className="text-sm font-semibold">
-            ⚠️ API Key Issue: Check your Netlify environment variables
-            <br />
-            <small>Current: {import.meta.env.VITE_OPENAI_API_KEY?.substring(0, 10) || 'undefined'}...</small>
-          </p>
-        </div>
-      )}
     </div>
   );
 }
