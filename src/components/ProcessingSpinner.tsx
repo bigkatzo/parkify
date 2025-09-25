@@ -16,6 +16,9 @@ export const ProcessingSpinner: React.FC = () => {
         <p className="text-gray-600">
           Kenny's working on it... (hopefully he won't die this time)
         </p>
+        <p className="text-sm text-gray-500 mt-2">
+          Larger images may take up to 2-3 minutes to process
+        </p>
       </div>
       
       <div className="w-64 bg-gray-200 rounded-full h-3 overflow-hidden">

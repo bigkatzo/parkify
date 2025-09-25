@@ -75,6 +75,11 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       console.log('Image too large, compressing...', { originalSize: imageFile.size });
       processedFile = await compressImage(imageFile);
       console.log('Image compressed', { newSize: processedFile.size });
+    } else if (imageFile.size > 10 * 1024 * 1024) {
+      // For images between 10MB-50MB, also compress to reduce processing time
+      console.log('Large image detected, compressing for faster processing...', { originalSize: imageFile.size });
+      processedFile = await compressImage(imageFile);
+      console.log('Image compressed', { newSize: processedFile.size });
     }
 
     // Convert to base64 for backend transmission

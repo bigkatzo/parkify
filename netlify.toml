@@ -10,8 +10,8 @@
   external_node_modules = ["form-data", "node-fetch"]
 
 [functions."generate-image"]
-  memory = 1024
-  timeout = 60
+  memory = 3008
+  timeout = 900
 
 [[redirects]]
   from = "/*"
