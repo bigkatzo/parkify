@@ -79,17 +79,28 @@ const handler: Handler = async (event) => {
 
     // Parse the request body
     const { image } = JSON.parse(event.body);
-    const imageBuffer = Buffer.from(image.split(',')[1], 'base64');
-
-    console.log('Processing request with image data');
+    
+    console.log('Processing request with image data:', {
+      dataLength: image.length,
+      base64Length: image.split(',')[1].length
+    });
 
     // Create FormData for the Image API
     const formData = new FormData();
     formData.append('model', 'gpt-image-1');
     formData.append('prompt', SOUTH_PARK_PROMPT);
-    formData.append('image', imageBuffer, { filename: 'image.png', contentType: 'image/png' });
-    formData.append('size', '1024x1024'); // Standard size for edits endpoint
-    formData.append('quality', 'medium'); // Medium quality for faster generation
+    
+    // Handle base64 image data
+    const base64Data = image.split(',')[1];
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    formData.append('image', imageBuffer, { 
+      filename: 'image.png',
+      contentType: 'image/png',
+      knownLength: imageBuffer.length
+    });
+    
+    formData.append('size', '1024x1024');
+    formData.append('quality', 'medium');
 
     console.log('Sending request to OpenAI');
 
