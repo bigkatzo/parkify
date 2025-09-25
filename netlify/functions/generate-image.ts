@@ -1,6 +1,8 @@
 import { Handler } from '@netlify/functions';
-import fetch from 'node-fetch';
 import FormData from 'form-data';
+
+// Use CommonJS require for node-fetch
+const fetch = require('node-fetch');
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/images/edits';
 
