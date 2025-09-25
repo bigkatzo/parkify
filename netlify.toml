@@ -13,6 +13,9 @@
   memory = 3008
   timeout = 300
 
+[functions."generate-image-background"]
+  memory = 3008
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

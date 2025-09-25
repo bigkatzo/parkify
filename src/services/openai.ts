@@ -101,9 +101,9 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       try {
         console.log(`Attempt ${retryCount + 1} to call function...`);
         
-        // Add timeout to prevent hanging requests
+        // Try the optimized fast function first (30 second timeout)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout
+        const timeoutId = setTimeout(() => controller.abort(), 35000); // 35 seconds timeout
         
         try {
           response = await fetch('/.netlify/functions/generate-image', {
@@ -123,7 +123,30 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
           clearTimeout(timeoutId);
         } catch (error) {
           clearTimeout(timeoutId);
-          throw error;
+          
+          // If the fast function times out, try the background function as fallback
+          if ((error as Error).name === 'AbortError' && retryCount === 0) {
+            console.log('Fast function timed out, trying background function...');
+            try {
+              response = await fetch('/.netlify/functions/generate-image-background', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Connection': 'keep-alive',
+                  'Cache-Control': 'no-cache'
+                },
+                body: JSON.stringify({
+                  image: base64Image
+                }),
+                // Background functions can run much longer
+                keepalive: true
+              });
+            } catch (bgError) {
+              throw bgError;
+            }
+          } else {
+            throw error;
+          }
         }
         
         // If we get here, the request succeeded

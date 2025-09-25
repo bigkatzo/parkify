@@ -57,11 +57,10 @@ const handler: Handler = async (event) => {
     };
   }
 
-
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     
-    console.log('Environment check:', {
+    console.log('Background function - Environment check:', {
       hasApiKey: !!apiKey,
       keyLength: apiKey?.length || 0,
       keyStart: apiKey?.substring(0, 10) || 'none'
@@ -74,17 +73,6 @@ const handler: Handler = async (event) => {
         body: JSON.stringify({
           success: false,
           error: 'OpenAI API key not configured. Please check your Netlify environment variables.'
-        })
-      };
-    }
-
-    if (apiKey.includes('your_ope') || apiKey.includes('************')) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          error: 'OpenAI API key is still using placeholder value. Please check your Netlify environment variables.'
         })
       };
     }
@@ -103,26 +91,21 @@ const handler: Handler = async (event) => {
     // Parse the request body
     const { image } = JSON.parse(event.body);
     
-    console.log('Processing request with:', {
+    console.log('Background function - Processing request with:', {
       dataLength: image.length,
       base64Length: image.split(',')[1].length
     });
 
-    // Optimize for speed: use smaller image size and simpler processing
+    // Create FormData for the Image API
     const formData = new FormData();
-    formData.append('model', 'dall-e-2'); // Use DALL-E 2 for edits
+    formData.append('model', 'dall-e-2'); // Use DALL-E 2 for image edits
     formData.append('prompt', SOUTH_PARK_PROMPT);
     
-    // Handle base64 image data with optimization
+    // Handle base64 image data
     const base64Data = image.split(',')[1];
-    let imageBuffer = Buffer.from(base64Data, 'base64');
+    const imageBuffer = Buffer.from(base64Data, 'base64');
     
-    // Optimize: reduce image size if it's too large (helps with speed)
-    const maxSize = 4 * 1024 * 1024; // 4MB max
-    if (imageBuffer.length > maxSize) {
-      console.log('Image too large, this may cause timeouts');
-    }
-    
+    // Determine the original file type from the base64 header
     const mimeMatch = image.match(/^data:([^;]+);base64,/);
     const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
     const fileExtension = mimeType.split('/')[1] || 'png';
@@ -132,48 +115,24 @@ const handler: Handler = async (event) => {
       contentType: mimeType
     });
     
-    // Use smaller size for faster generation
-    formData.append('size', '512x512'); // Smaller size = faster generation
+    formData.append('size', '1024x1024');
     formData.append('n', '1');
 
-    console.log('Sending request to OpenAI');
+    console.log('Background function - Sending request to OpenAI (no timeout limit)');
 
-    // Use much shorter timeout for DALL-E 3 generation (it's much faster)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
-
-    let response;
-    try {
-      response = await fetch(OPENAI_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        // @ts-ignore - node-fetch types issue with FormData
-        body: formData,
-        signal: controller.signal
-      });
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        console.error('OpenAI API request timed out');
-        return {
-          statusCode: 408,
-          headers,
-          body: JSON.stringify({
-            success: false,
-            error: 'Request timed out. Please try again.'
-          })
-        };
-      }
-      throw error;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    // No timeout needed for background functions - they can run up to 15 minutes
+    const response = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      // @ts-ignore - node-fetch types issue with FormData
+      body: formData
+    });
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('OpenAI API Error:', errorData);
+      console.error('Background function - OpenAI API Error:', errorData);
       return {
         statusCode: response.status,
         headers,
@@ -185,11 +144,12 @@ const handler: Handler = async (event) => {
     }
 
     const data = await response.json();
-    console.log('OpenAI Response:', JSON.stringify(data, null, 2));
+    console.log('Background function - OpenAI Response received');
     
     if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
       return {
         statusCode: 500,
+        headers,
         body: JSON.stringify({
           success: false,
           error: 'No image data returned from OpenAI Image API'
@@ -210,12 +170,15 @@ const handler: Handler = async (event) => {
     } else {
       return {
         statusCode: 500,
+        headers,
         body: JSON.stringify({
           success: false,
           error: 'No image URL or base64 data in response'
         })
       };
     }
+
+    console.log('Background function - Successfully processed image');
 
     return {
       statusCode: 200,
@@ -227,7 +190,7 @@ const handler: Handler = async (event) => {
     };
 
   } catch (error) {
-    console.error('Request failed:', error);
+    console.error('Background function - Request failed:', error);
     return {
       statusCode: 500,
       headers,
