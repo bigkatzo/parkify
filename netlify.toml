@@ -5,6 +5,13 @@
 [build.environment]
   NODE_VERSION = "18"
 
+[functions]
+  # Increase the function timeout to 2 minutes for image generation
+  node_bundler = "esbuild"
+  external_node_modules = ["form-data"]
+  included_files = []
+  timeout = "120"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -12,5 +19,10 @@
 
 [context.production.environment]
   # Environment variables are set in Netlify dashboard
+  # Required environment variables:
+  # - OPENAI_API_KEY: Your OpenAI API key (set in Netlify dashboard)
 
 [context.deploy-preview.environment]
+  # Environment variables are set in Netlify dashboard
+  # Required environment variables:
+  # - OPENAI_API_KEY: Your OpenAI API key (set in Netlify dashboard)

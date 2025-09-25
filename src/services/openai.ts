@@ -1,6 +1,4 @@
-const OPENAI_API_URL = 'https://api.openai.com/v1/images/edits';
-
-const compressImage = async (file: File): Promise<File> => {
+const compressImage = async (file: File): Promise<string> => {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
@@ -29,50 +27,14 @@ const compressImage = async (file: File): Promise<File> => {
       // Draw and compress
       ctx.drawImage(img, 0, 0, width, height);
       
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const compressedFile = new File([blob], file.name, {
-            type: 'image/jpeg',
-            lastModified: Date.now(),
-          });
-          resolve(compressedFile);
-        } else {
-          resolve(file);
-        }
-      }, 'image/jpeg', 0.8);
+      // Convert to base64
+      const base64Data = canvas.toDataURL('image/png');
+      resolve(base64Data);
     };
     
     img.src = URL.createObjectURL(file);
   });
 };
-
-
-
-const SOUTH_PARK_PROMPT = `Transform this image into a cartoon illustration in the distinctive South Park TV show animation style. Create original cartoon characters inspired by the composition and general scene, using South Park's signature art style:
-
-Art Style Requirements:
-• Large round heads (40–50% of character height)
-• Big circular white eyes with small black pupils
-• Simple mitten-style hands without individual fingers
-• Small blocky bodies with simplified limbs
-• Solid, flat colors with bold black outlines
-• No shading, gradients, or realistic textures
-
-Character Design:
-• Create new cartoon characters inspired by the scene
-• Use South Park's typical color palette and character proportions
-• Maintain the general composition and arrangement from the reference
-• Apply South Park's signature clothing and accessory style
-
-Background:
-• Simplify to either a flat color background or classic South Park setting
-• Use the show's typical environmental style (snowy mountain town, simple interiors, etc.)
-
-Output Quality:
-• Clean, sharp illustration matching official South Park animation quality
-• Maintain South Park's characteristic simplicity and bold visual style`;
-
-
 
 export interface GenerateImageResponse {
   success: boolean;
@@ -82,29 +44,7 @@ export interface GenerateImageResponse {
 
 export const generateSouthParkImage = async (imageFile: File): Promise<GenerateImageResponse> => {
   try {
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    
-    console.log('Environment check:', {
-      hasApiKey: !!apiKey,
-      keyLength: apiKey?.length || 0,
-      keyStart: apiKey?.substring(0, 10) || 'none'
-    });
-    
-    if (!apiKey) {
-      return {
-        success: false,
-        error: 'OpenAI API key not configured. Please add VITE_OPENAI_API_KEY to your environment variables.'
-      };
-    }
-
-    if (apiKey.includes('your_ope') || apiKey.includes('************')) {
-      return {
-        success: false,
-        error: 'OpenAI API key is still using placeholder value. Please check your Netlify environment variables.'
-      };
-    }
-
-    // Validate file type - Image API edits endpoint supports PNG, JPEG, and GIF
+    // Validate file type
     const supportedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
     if (!supportedTypes.includes(imageFile.type)) {
       return {
@@ -113,91 +53,49 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       };
     }
 
-    // Compress if file is too large (50MB limit for GPT Image)
-    let processedFile = imageFile;
-    if (imageFile.size > 50 * 1024 * 1024) {
-      console.log('Image too large, compressing...', { originalSize: imageFile.size });
-      processedFile = await compressImage(imageFile);
-      console.log('Image compressed', { newSize: processedFile.size });
-    }
-
-
+    // Compress and convert to base64
+    console.log('Image too large, compressing...', { originalSize: imageFile.size });
+    const base64Image = await compressImage(imageFile);
+    console.log('Image compressed');
 
     console.log('Sending request with:', {
-      fileType: processedFile.type,
-      fileSize: processedFile.size,
-      fileName: processedFile.name
+      fileType: imageFile.type,
+      fileSize: imageFile.size,
+      fileName: imageFile.name
     });
 
-    // Create FormData for the Image API
-    const formData = new FormData();
-    formData.append('model', 'gpt-image-1');
-    formData.append('prompt', SOUTH_PARK_PROMPT);
-    formData.append('image', processedFile);
-    formData.append('size', '1024x1024'); // Standard size for edits endpoint
-    formData.append('quality', 'medium'); // Medium quality for faster generation
-
-    const response = await fetch(OPENAI_API_URL, {
+    // Call our secure serverless function
+    const response = await fetch('/.netlify/functions/generate-image', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
-      body: formData
+      body: JSON.stringify({
+        image: base64Image
+      })
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('OpenAI API Error:', errorData);
+      console.error('API Error:', errorData);
       return {
         success: false,
-        error: `OpenAI Error: ${errorData.error?.message || 'Unknown error'}`
+        error: errorData.error || 'Failed to generate image'
       };
     }
 
     const data = await response.json();
-    console.log('OpenAI Response:', JSON.stringify(data, null, 2));
     
-    // Handle Image API response format
-    if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
+    if (!data.success || !data.imageUrl) {
       return {
         success: false,
-        error: 'No image data returned from OpenAI Image API'
-      };
-    }
-
-    // Check if we have either URL or base64 data
-    const imageData = data.data[0];
-    let imageUrl: string;
-    
-    if (imageData.url) {
-      // If we get a URL, use it directly
-      imageUrl = imageData.url;
-    } else if (imageData.b64_json) {
-      // If we get base64 data, convert it to a blob URL
-      try {
-        const binaryString = atob(imageData.b64_json);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        const imageBlob = new Blob([bytes], { type: 'image/png' });
-        imageUrl = URL.createObjectURL(imageBlob);
-      } catch {
-        return {
-          success: false,
-          error: 'Failed to process base64 image data'
-        };
-      }
-    } else {
-      return {
-        success: false,
-        error: 'No image URL or base64 data in response'
+        error: data.error || 'No image URL returned'
       };
     }
 
     return {
       success: true,
-      imageUrl: imageUrl
+      imageUrl: data.imageUrl
     };
     
   } catch (error) {

@@ -33,11 +33,23 @@ Transform your photos into South Park style illustrations using AI!
 
 2. **Configure Environment Variables**
    - Copy `.env.example` to `.env`
-   - Add your API keys:
+   - For local development with Netlify Functions:
+     ```bash
+     # Install Netlify CLI
+     npm install -g netlify-cli
+     
+     # Login to Netlify
+     netlify login
+     
+     # Link your project
+     netlify link
+     
+     # Start development server with Netlify Functions
+     netlify dev
      ```
-     VITE_OPENAI_API_KEY=your_actual_api_key_here
-     VITE_SUPABASE_URL=your_supabase_project_url
-     VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   - Add your API keys to Netlify:
+     ```bash
+     netlify env:set OPENAI_API_KEY your_actual_api_key_here
      ```
 
 3. **Run Development Server**
@@ -73,9 +85,12 @@ Transform your photos into South Park style illustrations using AI!
 3. **Add Environment Variables in Netlify:**
    - Go to Site settings → Environment variables
    - Add these variables:
-     - `VITE_OPENAI_API_KEY`: Your OpenAI API key
-     - `VITE_SUPABASE_URL`: Your Supabase project URL
-     - `VITE_SUPABASE_ANON_KEY`: Your Supabase anon key
+     - `OPENAI_API_KEY`: Your OpenAI API key (used by serverless functions)
+     - `VITE_SUPABASE_URL`: Your Supabase project URL (optional)
+     - `VITE_SUPABASE_ANON_KEY`: Your Supabase anon key (optional)
+   
+   Note: The OpenAI API key is now securely stored and only accessible by the serverless functions.
+   It is no longer exposed to the frontend.
 
 4. **Deploy:**
    - Click "Deploy site"
@@ -117,11 +132,11 @@ Once connected:
 
 ## Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `VITE_OPENAI_API_KEY` | OpenAI API key for image generation | Yes |
-| `VITE_SUPABASE_URL` | Supabase project URL | Optional* |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key | Optional* |
+| Variable | Description | Required | Location |
+|----------|-------------|----------|----------|
+| `OPENAI_API_KEY` | OpenAI API key for image generation | Yes | Netlify Environment |
+| `VITE_SUPABASE_URL` | Supabase project URL | Optional* | Frontend Environment |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key | Optional* | Frontend Environment |
 
 *Required for future features like user accounts, image history, etc.
 
