@@ -87,22 +87,27 @@ const handler: Handler = async (event) => {
       base64Length: image.split(',')[1].length
     });
 
-    // Create FormData for the Image API
+    // Create FormData for the Image API - match original exactly
     const formData = new FormData();
     formData.append('model', 'gpt-image-1');
     formData.append('prompt', SOUTH_PARK_PROMPT);
     
-    // Handle base64 image data
+    // Handle base64 image data - recreate the original file format
     const base64Data = image.split(',')[1];
     const imageBuffer = Buffer.from(base64Data, 'base64');
-    formData.append('image', imageBuffer, { 
-      filename: 'image.png',
-      contentType: 'image/png',
-      knownLength: imageBuffer.length
+    
+    // Determine the original file type from the base64 header
+    const mimeMatch = image.match(/^data:([^;]+);base64,/);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
+    const fileExtension = mimeType.split('/')[1] || 'png';
+    
+    formData.append('image', imageBuffer, {
+      filename: `image.${fileExtension}`,
+      contentType: mimeType
     });
     
-    formData.append('size', '1024x1024');
-    formData.append('quality', 'medium');
+    formData.append('size', '1024x1024'); // Standard size for edits endpoint
+    formData.append('quality', 'medium'); // Medium quality for faster generation
 
     console.log('Sending request to OpenAI');
 
@@ -115,12 +120,9 @@ const handler: Handler = async (event) => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
-          'Accept': 'application/json',
         },
         // @ts-ignore - node-fetch types issue with FormData
-        body: formData,
-        signal: controller.signal,
-        timeout: 50000 // 50 seconds
+        body: formData
       });
 
       clearTimeout(timeoutId);

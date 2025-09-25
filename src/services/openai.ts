@@ -1,4 +1,4 @@
-const compressImage = async (file: File): Promise<string> => {
+const compressImage = async (file: File): Promise<File> => {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
@@ -27,13 +27,28 @@ const compressImage = async (file: File): Promise<string> => {
       // Draw and compress
       ctx.drawImage(img, 0, 0, width, height);
       
-      // Convert to base64
-      // Convert to base64
-      const base64Data = canvas.toDataURL('image/png');
-      resolve(base64Data);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const compressedFile = new File([blob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+          resolve(compressedFile);
+        } else {
+          resolve(file);
+        }
+      }, 'image/jpeg', 0.8);
     };
     
     img.src = URL.createObjectURL(file);
+  });
+};
+
+const fileToBase64 = async (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.readAsDataURL(file);
   });
 };
 
@@ -54,10 +69,16 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
       };
     }
 
-    // Compress and convert to base64
-    console.log('Image too large, compressing...', { originalSize: imageFile.size });
-    const base64Image = await compressImage(imageFile);
-    console.log('Image compressed');
+    // Compress if file is too large (50MB limit for GPT Image) - match original logic exactly
+    let processedFile = imageFile;
+    if (imageFile.size > 50 * 1024 * 1024) {
+      console.log('Image too large, compressing...', { originalSize: imageFile.size });
+      processedFile = await compressImage(imageFile);
+      console.log('Image compressed', { newSize: processedFile.size });
+    }
+
+    // Convert to base64 for backend transmission
+    const base64Image = await fileToBase64(processedFile);
 
     console.log('Sending request with:', {
       fileType: imageFile.type,
