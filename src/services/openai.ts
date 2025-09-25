@@ -28,6 +28,7 @@ const compressImage = async (file: File): Promise<string> => {
       ctx.drawImage(img, 0, 0, width, height);
       
       // Convert to base64
+      // Convert to base64
       const base64Data = canvas.toDataURL('image/png');
       resolve(base64Data);
     };
@@ -76,11 +77,20 @@ export const generateSouthParkImage = async (imageFile: File): Promise<GenerateI
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('API Error:', errorData);
+      let errorMessage = 'Failed to generate image';
+      try {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        errorMessage = errorData.error || errorMessage;
+      } catch (e) {
+        // If response is not JSON (e.g., 504 timeout)
+        errorMessage = response.status === 504 
+          ? 'Request timed out. Please try again with a smaller image.'
+          : `Server error (${response.status}). Please try again.`;
+      }
       return {
         success: false,
-        error: errorData.error || 'Failed to generate image'
+        error: errorMessage
       };
     }
 
